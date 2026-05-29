@@ -42,6 +42,7 @@ from query_execution import stream_agent_sse_lines
 from auth import AuthError, decode_jwt_identity, require_jwt_secret
 from api_errors import internal_error_response
 from auth_passwords import SOCIAL_LOGIN_PASSWORD_HASH, verify_password
+from swagger_docs import register_swagger_docs
 
 load_dotenv()
 
@@ -303,6 +304,24 @@ def _send_telegram_text(chat_id: int, text: str) -> None:
         timeout=30,
     ).raise_for_status()
 
+# --- Helper Functions (From Kushal-Dev) ---
+def get_period_dates(period):
+    end_date = date.today()
+    if period == "this_month":
+        start_date = end_date.replace(day=1)
+    elif period == "last_month":
+        last_month_end = end_date.replace(day=1) - timedelta(days=1)
+        start_date = last_month_end.replace(day=1)
+        end_date = last_month_end
+    elif period == "last_7_days":
+        start_date = end_date - timedelta(days=7)
+    elif period == "last_30_days":
+        start_date = end_date - timedelta(days=30)
+    elif period == "ytd":
+        start_date = date(end_date.year, 1, 1)
+    else:
+        start_date = end_date - timedelta(days=30)
+    return start_date, end_date
 
 def _sse_stream_response(generator):
     response = Response(stream_with_context(generator), mimetype="text/event-stream")
@@ -747,21 +766,6 @@ def api_export_dashboard_csv():
     except Exception as exc:
         return internal_error_response(exc)
 
-def get_period_dates(period):
-    end_date = datetime.now().date()
-    if period == "this_month":
-        start_date = end_date.replace(day=1)
-    elif period == "last_month":
-        start_date = (end_date.replace(day=1) - timedelta(days=1)).replace(day=1)
-        end_date = (end_date.replace(day=1) - timedelta(days=1))
-    elif period == "last_7_days":
-        start_date = end_date - timedelta(days=7)
-    elif period == "last_30_days":
-        start_date = end_date - timedelta(days=30)
-    else:
-        start_date = date(2000, 1, 1)
-    return start_date, end_date
-
 @app.route("/api/dashboard/summary-sql", methods=["GET", "OPTIONS"])
 @token_required
 def api_dashboard_summary():
@@ -951,6 +955,7 @@ def health():
     return jsonify({"status": "ok"})
 
 # Start Server
+register_swagger_docs(app)
 _init_chat_db()
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

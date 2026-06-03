@@ -572,7 +572,8 @@ def _run_agent_to_text(query: str, thread_id: str, business_id: str) -> str:
 
     response = "".join(chunks).strip()
     if response:
-        return response
+       return response
+
     if fallback_error:
         logger.error("Agent execution failed: %s", fallback_error)
         return "Sorry, something went wrong while generating the response."

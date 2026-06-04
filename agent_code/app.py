@@ -879,6 +879,20 @@ def import_notebook():
 @limiter.limit(IMPORT_RATE_LIMIT)
 @token_required
 def confirm_notebook():
+    """Confirms and commits imported notebook transactions.
+
+    This function processes request payloads to confirm staging notebook
+    transactions. It extracts and validates transaction metadata before
+    persisting records to the database.
+
+    Returns:
+        tuple: A Flask response tuple containing:
+            - Success JSON payload with a 200 status code upon execution.
+            - Error JSON with a 400 status if no transactions are found to confirm.
+            - Error JSON with a 400 status if the request contains invalid JSON.
+            - Error JSON with a 500 status if an internal server error occurs.
+    """
+
     data = request.get_json(silent=True)
 
     if not isinstance(data, dict):
